@@ -1,31 +1,7 @@
 #include "Platform.h"
 
-#if USE_FRAMEWORK_GLFW
 
-void InitPlatform()
-{
-	glfwInit();
-	if (glfwVulkanSupported() == GLFW_FALSE) {
-		assert(0 && " GLFW Failed to initialize with Vulkan.");
-		return;
-	}
-}
-
-void DeInitPlatform()
-{
-	glfwTerminate();
-}
-
-void AddRequiredPlatformInstanceExtensions(std::vector<const char *> *instance_extensions)
-{
-	uint32_t instance_extension_count = 0;
-	const char ** instance_extensions_buffer = glfwGetRequiredInstanceExtensions(&instance_extension_count);
-	for (uint32_t i = 0; i < instance_extension_count; i++) {
-		instance_extensions->push_back(instance_extensions_buffer[i]);
-	}
-}
-
-#elif VK_USE_PLATFORM_WIN32_KHR
+#if VK_USE_PLATFORM_WIN32_KHR
 
 void InitPlatform()
 {

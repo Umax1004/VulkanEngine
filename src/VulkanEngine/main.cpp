@@ -4,6 +4,10 @@
 int main()
 {
 	Renderer r;
-	_getch();
+	r.OpenWindow(800, 600, "Test");
+	while (r.Run())
+	{
+
+	}
 	return 0;
 }

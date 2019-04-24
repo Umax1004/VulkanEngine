@@ -1,7 +1,9 @@
 #include "Renderer.h"
+#include "Window.h"
 
 Renderer::Renderer()
 {
+	_SetupLayersAndExtensions();
 	_SetupDebug();
 	_InitInstance();
 	_InitDebug();
@@ -11,9 +13,63 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {
+	delete _window;
 	_DeInitDevice();
 	_DeInitDebug();
 	_DeInitInstance();
+}
+
+Window * Renderer::OpenWindow(uint32_t size_x, uint32_t size_y, std::string name)
+{
+	_window = new Window(this, size_x,size_y,name);
+	return _window;
+}
+
+bool Renderer::Run()
+{
+	if (_window != nullptr )
+	{
+		return _window->Update();
+	}
+	return true;
+}
+
+const VkInstance Renderer::GetVulkanInstance() const
+{
+	return _instance;
+}
+
+const VkPhysicalDevice Renderer::GetVulkanPhysicalDevice() const
+{
+	return _gpu;
+}
+
+const VkDevice Renderer::GetVulkanDevice() const
+{
+	return _device;
+}
+
+const VkQueue Renderer::GetVulkanQueue() const
+{
+	return _queue;
+}
+
+const uint32_t Renderer::GetVulkanGraphicsQueueFamilyIndex() const
+{
+	return _graphicsFamilyIndex;
+}
+
+const VkPhysicalDeviceProperties & Renderer::GetVulkanPhysicalDeviceProperties() const
+{
+	return _gpuProperties;
+}
+
+void Renderer::_SetupLayersAndExtensions()
+{
+	//_instanceExtensions.push_back(VK_KHR_DISPLAY_EXTENSION_NAME);
+	_instanceExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+	AddRequiredPlatformInstanceExtensions(&_instanceExtensions);
+	_deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 }
 
 void Renderer::_InitInstance()
@@ -35,6 +91,7 @@ void Renderer::_InitInstance()
 	instanceCreateInfo.pNext = &debugCallbackCreateInfo;
 
 	ErrorCheck(vkCreateInstance(&instanceCreateInfo, nullptr, &_instance));
+
 }
 
 void Renderer::_DeInitInstance()
@@ -91,7 +148,7 @@ void Renderer::_InitDevice()
 
 	VkDeviceQueueCreateInfo deviceQueueCreateInfo{};
 	deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	deviceQueueCreateInfo.queueFamilyIndex = _graphicsFamilyBit;
+	deviceQueueCreateInfo.queueFamilyIndex = _graphicsFamilyIndex;
 	deviceQueueCreateInfo.queueCount = 1;
 	deviceQueueCreateInfo.pQueuePriorities = queuePriorities;
 
@@ -107,6 +164,8 @@ void Renderer::_InitDevice()
 
 
 	ErrorCheck(vkCreateDevice( _gpu, &deviceCreateInfo, nullptr, &_device));
+
+	vkGetDeviceQueue(_device, _graphicsFamilyIndex, 0, &_queue);
 
 }
 
@@ -174,7 +233,7 @@ void Renderer::_SetupDebug()
 	_instanceLayers.push_back("VK_LAYER_LUNARG_standard_validation");
 	_instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 
-	_deviceLayers.push_back("VK_LAYER_LUNARG_standard_validation");
+	//_deviceLayers.push_back("VK_LAYER_LUNARG_standard_validation");
 }
 
 PFN_vkCreateDebugReportCallbackEXT		fvkCreateDebugReportCallbackEXT = nullptr;
@@ -244,7 +303,7 @@ void Renderer::getGraphicsFamilyIndex(VkQueueFamilyProperties * queueList, uint3
 		if (queueList[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
 			found = true;
-			_graphicsFamilyBit = i;
+			_graphicsFamilyIndex = i;
 		}
 	}
 
