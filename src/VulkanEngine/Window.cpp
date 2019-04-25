@@ -9,10 +9,12 @@ Window::Window(Renderer* renderer, uint32_t size_x, uint32_t size_y, std::string
 	_InitOSWindow();
 	_InitSurface();
 	_InitSwapchain();
+	_InitSwapchainImages();
 }
 
 Window::~Window()
 {
+	_DeInitSwapchainImages();
 	_DeInitSwapchain();
 	_DeInitSurface();
 	_DeInitOSWindow();
@@ -80,9 +82,9 @@ void Window::_DeInitSurface()
 
 void Window::_InitSwapchain()
 {
-	if (_minSwapchainImageCount < _surfaceCapabilites.minImageCount + 1) _minSwapchainImageCount = _surfaceCapabilites.minImageCount + 1;
+	if (_swapchainImageCount < _surfaceCapabilites.minImageCount + 1) _swapchainImageCount = _surfaceCapabilites.minImageCount + 1;
 	if (_surfaceCapabilites.maxImageCount > 0) {
-		if (_minSwapchainImageCount > _surfaceCapabilites.maxImageCount) _minSwapchainImageCount = _surfaceCapabilites.maxImageCount;
+		if (_swapchainImageCount > _surfaceCapabilites.maxImageCount) _swapchainImageCount = _surfaceCapabilites.maxImageCount;
 	}
 
 	VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
@@ -108,7 +110,7 @@ void Window::_InitSwapchain()
 	VkSwapchainCreateInfoKHR swapchainCreateInfo{};
 	swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	swapchainCreateInfo.surface = _surface;
-	swapchainCreateInfo.minImageCount = _minSwapchainImageCount;
+	swapchainCreateInfo.minImageCount = _swapchainImageCount;
 	swapchainCreateInfo.imageFormat = _surfaceFormat.format;
 	swapchainCreateInfo.imageColorSpace = _surfaceFormat.colorSpace;
 	swapchainCreateInfo.imageExtent.width = _surface_size_x;
@@ -125,9 +127,46 @@ void Window::_InitSwapchain()
 	swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
 	ErrorCheck(vkCreateSwapchainKHR(_renderer->GetVulkanDevice(), &swapchainCreateInfo, nullptr, &_swapchain));
+
+	ErrorCheck(vkGetSwapchainImagesKHR(_renderer->GetVulkanDevice(), _swapchain, &_swapchainImageCount, nullptr));
 }
 
 void Window::_DeInitSwapchain()
 {
 	vkDestroySwapchainKHR(_renderer->GetVulkanDevice(), _swapchain, nullptr);
+}
+
+void Window::_InitSwapchainImages()
+{
+	_swapchainImages.resize(_swapchainImageCount);
+	_swapchainImageViews.resize(_swapchainImageCount);
+	ErrorCheck(vkGetSwapchainImagesKHR(_renderer->GetVulkanDevice(), _swapchain, &_swapchainImageCount, _swapchainImages.data()));
+
+	for (uint32_t i = 0; i < _swapchainImageCount; i++)
+	{
+		VkImageViewCreateInfo imageViewCreateInfo{};
+		imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		imageViewCreateInfo.image = _swapchainImages[i];
+		imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		imageViewCreateInfo.format = _surfaceFormat.format;
+		imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+		imageViewCreateInfo.subresourceRange.levelCount = 1;
+		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+		imageViewCreateInfo.subresourceRange.layerCount = 1;
+		ErrorCheck(vkCreateImageView(_renderer->GetVulkanDevice() , &imageViewCreateInfo, nullptr, &_swapchainImageViews[i]));
+
+	}
+}
+
+void Window::_DeInitSwapchainImages()
+{
+	for (auto view : _swapchainImageViews)
+	{
+		vkDestroyImageView(_renderer->GetVulkanDevice(), view, nullptr);
+	}
 }

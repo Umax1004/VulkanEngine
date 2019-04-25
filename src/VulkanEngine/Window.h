@@ -25,6 +25,9 @@ private:
 	void _InitSwapchain();
 	void _DeInitSwapchain();
 
+	void _InitSwapchainImages();
+	void _DeInitSwapchainImages();
+
 	Renderer* _renderer;
 
 	VkSurfaceKHR _surface = VK_NULL_HANDLE;
@@ -35,7 +38,9 @@ private:
 	uint32_t							_surface_size_x = 512;
 	uint32_t							_surface_size_y = 512;
 	std::string							_window_name;
-	uint32_t							_minSwapchainImageCount = 2;
+	uint32_t							_swapchainImageCount = 2;
+	std::vector<VkImage>				_swapchainImages;
+	std::vector<VkImageView>			_swapchainImageViews;
 	
 	VkSurfaceCapabilitiesKHR _surfaceCapabilites{};
 	VkSurfaceFormatKHR _surfaceFormat{};
