@@ -2,7 +2,8 @@
 #include "Platform.h"
 #include "Window.h"
 
-#if VK_USE_PLATFORM_WIN32_KHR
+#if USE_FRAMEWORK_GLFW
+#elif VK_USE_PLATFORM_WIN32_KHR
 
 // Microsoft Windows specific versions of window functions
 LRESULT CALLBACK WindowsEventHandler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)

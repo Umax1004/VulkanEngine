@@ -40,7 +40,9 @@ private:
 	VkSurfaceCapabilitiesKHR _surfaceCapabilites{};
 	VkSurfaceFormatKHR _surfaceFormat{};
 
-#if VK_USE_PLATFORM_WIN32_KHR
+#if USE_FRAMEWORK_GLFW
+	GLFWwindow						*	_glfw_window = nullptr;
+#elif VK_USE_PLATFORM_WIN32_KHR
 	HINSTANCE							_win32_instance = NULL;
 	HWND								_win32_window = NULL;
 	std::string							_win32_class_name;

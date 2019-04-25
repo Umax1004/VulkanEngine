@@ -12,8 +12,9 @@ void AddRequiredPlatformInstanceExtensions(std::vector<const char *> *instance_e
 
 // Define as a build option 
 #define USE_FRAMEWORK_GLFW 1
-#define GLFW_INCLUDE_VULKAN
+//#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 // For Windows Message Box
 #if defined( _WIN32 )
 #undef APIENTRY
