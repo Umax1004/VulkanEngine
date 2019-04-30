@@ -64,6 +64,11 @@ const VkPhysicalDeviceProperties & Renderer::GetVulkanPhysicalDeviceProperties()
 	return _gpuProperties;
 }
 
+const VkPhysicalDeviceMemoryProperties & Renderer::GetVulkanPhysicalDeviceMemoryProperties() const
+{
+	return _gpuMemoryProperties;
+}
+
 void Renderer::_SetupLayersAndExtensions()
 {
 	//_instanceExtensions.push_back(VK_KHR_DISPLAY_EXTENSION_NAME);
@@ -109,6 +114,7 @@ void Renderer::_InitDevice()
 		vkEnumeratePhysicalDevices(_instance, &gpuCount, gpuList.data());
 		pickPhysicalDevice(gpuList.data(), gpuCount);
 		vkGetPhysicalDeviceProperties(_gpu, &_gpuProperties);
+		vkGetPhysicalDeviceMemoryProperties(_gpu, &_gpuMemoryProperties);
 	}
 
 	{
@@ -258,7 +264,10 @@ void Renderer::_DeInitDebug()
 	_debugReport = VK_NULL_HANDLE;
 }
 #else
-void Renderer::_SetupDebug(){}
+void Renderer::_SetupDebug(){
+	_instanceLayers.push_back("VK_LAYER_LUNARG_standard_validation");
+	_instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+}
 void Renderer::_InitDebug(){}
 void Renderer::_DeInitDebug(){}
 #endif //BUILD_ENABLE_VULKAN_DEBUG

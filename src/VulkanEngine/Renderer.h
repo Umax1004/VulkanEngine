@@ -23,7 +23,8 @@ public:
 	const VkDevice							GetVulkanDevice() const;
 	const VkQueue							GetVulkanQueue() const;
 	const uint32_t							GetVulkanGraphicsQueueFamilyIndex() const;
-	const VkPhysicalDeviceProperties	&	GetVulkanPhysicalDeviceProperties() const;
+	const VkPhysicalDeviceProperties		&	GetVulkanPhysicalDeviceProperties() const;
+	const VkPhysicalDeviceMemoryProperties	&	GetVulkanPhysicalDeviceMemoryProperties() const;
 
 private:
 
@@ -48,6 +49,7 @@ private:
 	VkQueue _queue = VK_NULL_HANDLE;
 	uint32_t _graphicsFamilyIndex = 0;
 	VkPhysicalDeviceProperties _gpuProperties = {};
+	VkPhysicalDeviceMemoryProperties _gpuMemoryProperties = {};
 
 	std::vector<const char*> _instanceLayers;
 	std::vector<const char*> _instanceExtensions;

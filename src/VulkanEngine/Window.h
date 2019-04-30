@@ -13,6 +13,10 @@ public:
 	void Close();
 	bool Update();
 
+	std::vector<VkImage> GetSwapchainImages();
+	VkSwapchainKHR		 GetSwapchain();
+	uint32_t			 GetSwapchainImagesCount();
+
 private:
 	void _InitOSWindow();
 	void _DeInitOSWindow();
@@ -28,6 +32,12 @@ private:
 	void _InitSwapchainImages();
 	void _DeInitSwapchainImages();
 
+	void _InitDepthStencilImage();
+	void _DeInitDepthStencilImage();
+
+	void _InitRenderPass();
+	void _DeInitRenderPass();
+
 	Renderer* _renderer;
 
 	VkSurfaceKHR _surface = VK_NULL_HANDLE;
@@ -41,9 +51,16 @@ private:
 	uint32_t							_swapchainImageCount = 2;
 	std::vector<VkImage>				_swapchainImages;
 	std::vector<VkImageView>			_swapchainImageViews;
+
+	VkImage								_depthStencilImage = VK_NULL_HANDLE;
+	VkDeviceMemory						_depthStencilImageMemory = VK_NULL_HANDLE;
+	VkImageView							_depthStencilImageView = VK_NULL_HANDLE;
 	
 	VkSurfaceCapabilitiesKHR _surfaceCapabilites{};
 	VkSurfaceFormatKHR _surfaceFormat{};
+
+	VkFormat _depthStencilFormat = VK_FORMAT_UNDEFINED;
+	bool _stencilAvailable = false;
 
 #if USE_FRAMEWORK_GLFW
 	GLFWwindow						*	_glfw_window = nullptr;
