@@ -3,6 +3,7 @@
 #include "Platform.h"
 #include <string>
 #include "Renderer.h"
+#include <array>
 
 class Window
 {
@@ -42,6 +43,7 @@ private:
 
 	VkSurfaceKHR _surface = VK_NULL_HANDLE;
 	VkSwapchainKHR _swapchain = VK_NULL_HANDLE;
+	VkRenderPass _renderPass = VK_NULL_HANDLE;
 
 	bool _windowShouldRun = true;
 
