@@ -39,6 +39,9 @@ private:
 	void _InitRenderPass();
 	void _DeInitRenderPass();
 
+	void _InitFramebuffers();
+	void _DeInitFramebuffers();
+
 	Renderer* _renderer;
 
 	VkSurfaceKHR _surface = VK_NULL_HANDLE;
@@ -51,8 +54,10 @@ private:
 	uint32_t							_surface_size_y = 512;
 	std::string							_window_name;
 	uint32_t							_swapchainImageCount = 2;
+
 	std::vector<VkImage>				_swapchainImages;
 	std::vector<VkImageView>			_swapchainImageViews;
+	std::vector<VkFramebuffer>			_framebuffers;
 
 	VkImage								_depthStencilImage = VK_NULL_HANDLE;
 	VkDeviceMemory						_depthStencilImageMemory = VK_NULL_HANDLE;

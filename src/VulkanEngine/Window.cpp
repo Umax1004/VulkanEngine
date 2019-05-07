@@ -12,10 +12,12 @@ Window::Window(Renderer* renderer, uint32_t size_x, uint32_t size_y, std::string
 	_InitSwapchainImages();
 	_InitDepthStencilImage();
 	_InitRenderPass();
+	_InitFramebuffers();
 }
 
 Window::~Window()
 {
+	_DeInitFramebuffers();
 	_DeInitRenderPass();
 	_DeInitDepthStencilImage();
 	_DeInitSwapchainImages();
@@ -311,6 +313,35 @@ void Window::_InitRenderPass()
 void Window::_DeInitRenderPass()
 {
 	vkDestroyRenderPass(_renderer->GetVulkanDevice(), _renderPass, nullptr);
+}
+
+void Window::_InitFramebuffers()
+{
+	_framebuffers.resize(_swapchainImageCount);
+	for (uint32_t i = 0; i < _swapchainImageCount; i++)
+	{
+		std::array<VkImageView, 2> attachments{};
+		attachments[0] = _depthStencilImageView;
+		attachments[1] = _swapchainImageViews[i];
+
+		VkFramebufferCreateInfo framebufferCreateInfo{};
+		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferCreateInfo.renderPass = _renderPass;
+		framebufferCreateInfo.attachmentCount = attachments.size();
+		framebufferCreateInfo.pAttachments = attachments.data();
+		framebufferCreateInfo.width = _surface_size_x;
+		framebufferCreateInfo.height = _surface_size_y;
+		framebufferCreateInfo.layers = 1;
+		
+		ErrorCheck(vkCreateFramebuffer(_renderer->GetVulkanDevice(), &framebufferCreateInfo, nullptr, &_framebuffers[i]));
+	}
+}
+
+void Window::_DeInitFramebuffers()
+{
+	for (auto f : _framebuffers) {
+		vkDestroyFramebuffer(_renderer->GetVulkanDevice(), f, nullptr);
+	}
 }
 
 std::vector<VkImage> Window::GetSwapchainImages()
