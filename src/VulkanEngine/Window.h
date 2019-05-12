@@ -5,6 +5,8 @@
 #include "Renderer.h"
 #include <array>
 
+const int MAX_FRAMES_IN_FLIGHT = 2;
+
 
 class Window
 {
@@ -53,8 +55,11 @@ private:
 	void _InitCommandBuffers();
 	void _DeInitCommandBuffers();
 
-	void _InitSemaphore();
-	void _DeInitSemaphore();
+	void _InitSyncObjects();
+	void _DeInitSyncObjects();
+
+	void _CleanUpOldSwapChain();
+	void _ReInitSwapChain();
 
 	static std::vector<char> readFile(const std::string& filename);
 
@@ -95,8 +100,11 @@ private:
 	VkPipeline _graphicsPipeline = VK_NULL_HANDLE;
 	VkCommandPool _commandPool = VK_NULL_HANDLE;
 	std::vector<VkCommandBuffer> _commandBuffers;
-	VkSemaphore _imageAvailableSemaphore;
-	VkSemaphore _renderFinishedSemaphore;
+
+	std::vector<VkSemaphore> _imageAvailableSemaphores;
+	std::vector<VkSemaphore> _renderFinishedSemaphores;
+	std::vector<VkFence> _inFlightFences;
+	size_t currentFrame = 0;
 
 #if USE_FRAMEWORK_GLFW
 	GLFWwindow						*	_glfw_window = nullptr;

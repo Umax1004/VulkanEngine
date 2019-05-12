@@ -34,6 +34,7 @@ void Window::_InitOSWindow()
 void Window::_DeInitOSWindow()
 {
 	glfwDestroyWindow( _glfw_window );
+	glfwTerminate();
 }
 
 void Window::_UpdateOSWindow()

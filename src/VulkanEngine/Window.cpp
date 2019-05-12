@@ -16,12 +16,12 @@ Window::Window(Renderer* renderer, uint32_t size_x, uint32_t size_y, std::string
 	_InitFramebuffers();
 	_InitCommandPool();
 	_InitCommandBuffers();
-	_InitSemaphore();
+	_InitSyncObjects();
 }
 
 Window::~Window()
 {
-	_DeInitSemaphore();
+	_DeInitSyncObjects();
 	_DeInitCommandBuffers();
 	_DeInitCommandPool();
 	_DeInitFramebuffers();
@@ -47,22 +47,25 @@ bool Window::Update()
 
 void Window::DrawFrame()
 {
+	vkWaitForFences(_renderer->GetVulkanDevice(), 1, &_inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+	vkResetFences(_renderer->GetVulkanDevice(), 1, &_inFlightFences[currentFrame]);
+
 	uint32_t imageIndex;
-	vkAcquireNextImageKHR(_renderer->GetVulkanDevice(), _swapchain, UINT64_MAX, _imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+	vkAcquireNextImageKHR(_renderer->GetVulkanDevice(), _swapchain, UINT64_MAX, _imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	VkSemaphore waitSemaphores[] = { _imageAvailableSemaphore };
+	VkSemaphore waitSemaphores[] = { _imageAvailableSemaphores[currentFrame] };
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &_commandBuffers[imageIndex];
-	VkSemaphore signalSemaphores[] = { _renderFinishedSemaphore };
+	VkSemaphore signalSemaphores[] = { _renderFinishedSemaphores[currentFrame] };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
-	ErrorCheck(vkQueueSubmit(_renderer->GetVulkanQueue(), 1, &submitInfo, VK_NULL_HANDLE));
+	ErrorCheck(vkQueueSubmit(_renderer->GetVulkanQueue(), 1, &submitInfo, _inFlightFences[currentFrame]));
 
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -77,9 +80,10 @@ void Window::DrawFrame()
 
 	vkQueuePresentKHR(_renderer->GetVulkanQueue(), &presentInfo);
 
-	vkQueueWaitIdle(_renderer->GetVulkanQueue());
+	//vkQueueWaitIdle(_renderer->GetVulkanQueue());
 
-	
+	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+
 }
 
 void Window::_InitSurface()
@@ -580,21 +584,68 @@ void Window::_InitCommandBuffers()
 
 void Window::_DeInitCommandBuffers()
 {
-
+	vkFreeCommandBuffers(_renderer->GetVulkanDevice(), _commandPool, _commandBuffers.size(), _commandBuffers.data());
 }
 
-void Window::_InitSemaphore()
+void Window::_InitSyncObjects()
 {
+	_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
 	VkSemaphoreCreateInfo semaphoreInfo = {};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	ErrorCheck(vkCreateSemaphore(_renderer->GetVulkanDevice(), &semaphoreInfo, nullptr, &_imageAvailableSemaphore));
-	ErrorCheck(vkCreateSemaphore(_renderer->GetVulkanDevice(), &semaphoreInfo, nullptr, &_renderFinishedSemaphore));
+
+	VkFenceCreateInfo fenceInfo = {};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
+	{
+		ErrorCheck(vkCreateSemaphore(_renderer->GetVulkanDevice(), &semaphoreInfo, nullptr, &_imageAvailableSemaphores[i]));
+		ErrorCheck(vkCreateSemaphore(_renderer->GetVulkanDevice(), &semaphoreInfo, nullptr, &_renderFinishedSemaphores[i]));
+		ErrorCheck(vkCreateFence(_renderer->GetVulkanDevice(), &fenceInfo, nullptr, &_inFlightFences[i]));
+	}
 }
 
-void Window::_DeInitSemaphore()
+void Window::_DeInitSyncObjects()
 {
-	vkDestroySemaphore(_renderer->GetVulkanDevice(), _imageAvailableSemaphore, nullptr);
-	vkDestroySemaphore(_renderer->GetVulkanDevice(), _renderFinishedSemaphore, nullptr);
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
+	{
+		vkDestroySemaphore(_renderer->GetVulkanDevice(), _imageAvailableSemaphores[i], nullptr);
+		vkDestroySemaphore(_renderer->GetVulkanDevice(), _renderFinishedSemaphores[i], nullptr);
+		vkDestroyFence(_renderer->GetVulkanDevice(), _inFlightFences[i], nullptr);
+	}
+}
+
+void Window::_CleanUpOldSwapChain()
+{
+	_DeInitFramebuffers();
+	_DeInitCommandBuffers();
+	vkDestroyPipeline(_renderer->GetVulkanDevice(), _graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(_renderer->GetVulkanDevice(), _pipelineLayout, nullptr);
+	_DeInitRenderPass();
+	_DeInitDepthStencilImage();
+	_DeInitSwapchainImages();
+	_DeInitSwapchain();
+
+	_DeInitOSWindow();
+}
+
+void Window::_ReInitSwapChain()
+{
+	vkDeviceWaitIdle(_renderer->GetVulkanDevice());
+
+	_CleanUpOldSwapChain();
+
+	_InitSwapchain();
+	_InitSwapchainImages();
+	_InitDepthStencilImage();
+	_InitRenderPass();
+	_InitGraphicsPipeline();
+	_InitFramebuffers();
+	_InitCommandBuffers();
+
 }
 
 std::vector<char> Window::readFile(const std::string & filename)
