@@ -70,15 +70,18 @@ uint32_t FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties * gpuMemoryP
 		if (memoryRequirements->memoryTypeBits & (1 << i)) {
 			if ((gpuMemoryProperties->memoryTypes[i].propertyFlags & memoryProperties) == memoryProperties) {
 				return  i;
+			}
 		}
 	}
-}
 
 	assert(0 && "Couldn't find proper memory type.");
 	return UINT32_MAX;
 }
 
+
+
 #else
 void ErrorCheck(VkResult result){}
 #endif
+
 

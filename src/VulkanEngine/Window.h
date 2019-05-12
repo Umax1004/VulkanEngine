@@ -5,6 +5,7 @@
 #include "Renderer.h"
 #include <array>
 
+
 class Window
 {
 public:
@@ -13,6 +14,7 @@ public:
 
 	void Close();
 	bool Update();
+	void DrawFrame();
 
 	std::vector<VkImage> GetSwapchainImages();
 	VkSwapchainKHR		 GetSwapchain();
@@ -42,6 +44,22 @@ private:
 	void _InitFramebuffers();
 	void _DeInitFramebuffers();
 
+	void _InitGraphicsPipeline();
+	void _DeInitGraphicsPipeline();
+
+	void _InitCommandPool();
+	void _DeInitCommandPool();
+
+	void _InitCommandBuffers();
+	void _DeInitCommandBuffers();
+
+	void _InitSemaphore();
+	void _DeInitSemaphore();
+
+	static std::vector<char> readFile(const std::string& filename);
+
+	VkShaderModule _CreateShaderModule(const std::vector<char>& code);
+
 	Renderer* _renderer;
 
 	VkSurfaceKHR _surface = VK_NULL_HANDLE;
@@ -68,6 +86,17 @@ private:
 
 	VkFormat _depthStencilFormat = VK_FORMAT_UNDEFINED;
 	bool _stencilAvailable = false;
+
+	VkShaderModule _vertShaderModule = VK_NULL_HANDLE;
+	VkShaderModule _fragShaderModule = VK_NULL_HANDLE;
+
+	VkViewport viewport = {};
+	VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
+	VkPipeline _graphicsPipeline = VK_NULL_HANDLE;
+	VkCommandPool _commandPool = VK_NULL_HANDLE;
+	std::vector<VkCommandBuffer> _commandBuffers;
+	VkSemaphore _imageAvailableSemaphore;
+	VkSemaphore _renderFinishedSemaphore;
 
 #if USE_FRAMEWORK_GLFW
 	GLFWwindow						*	_glfw_window = nullptr;

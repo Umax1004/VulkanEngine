@@ -51,6 +51,7 @@ int main()
 
 	while (r.Run())
 	{
+		window->DrawFrame();
 		/*
 		uint32_t imageIndex = 0;
 		for (uint32_t imageIndex = 0; imageIndex < window->GetSwapchainImagesCount(); imageIndex++)
@@ -104,5 +105,7 @@ int main()
 		}*/
 		
 	}
+
+	vkDeviceWaitIdle(r.GetVulkanDevice());
 	return 0;
 }
