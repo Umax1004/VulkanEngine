@@ -4,6 +4,7 @@
 #include <string>
 #include "Renderer.h"
 #include <array>
+#include "Vertex.h"
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -51,6 +52,9 @@ private:
 
 	void _InitCommandPool();
 	void _DeInitCommandPool();
+
+	void _InitVertexBuffers();
+	void _DeInitVertexBuffers();
 
 	void _InitCommandBuffers();
 	void _DeInitCommandBuffers();
@@ -111,6 +115,15 @@ private:
 	size_t currentFrame = 0;
 
 	bool framebufferResized = false;
+
+	const std::vector<Vertex> vertices = {
+	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+	};
+
+	VkBuffer _vertexBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory _vertexBufferMemory = VK_NULL_HANDLE;
 
 #if USE_FRAMEWORK_GLFW
 	GLFWwindow						*	_glfw_window = nullptr;

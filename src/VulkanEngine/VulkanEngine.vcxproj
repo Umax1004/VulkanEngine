@@ -76,7 +76,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\include;D:\Vulkan\VulkanEngine\extern\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VULKAN_SDK)\include;..\..\extern\glfw\include;..\..\extern\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>$(VULKAN_SDK)\Lib32\vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -88,7 +88,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\include;D:\Vulkan\VulkanEngine\extern\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VULKAN_SDK)\include;..\..\extern\glfw\include;..\..\extern\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_GLFW_WIN32;GLFW_EXPOSE_NATIVE_WIN32;_CRT_SECURE_NO_WARNINGS;VK_USE_PLATFORM_WIN32_KHR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -128,6 +128,7 @@
     <ClCompile Include="Platform.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Shared.cpp" />
+    <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="Window_glfw.cpp" />
     <ClCompile Include="Window_win32.cpp" />
@@ -137,6 +138,7 @@
     <ClInclude Include="Platform.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Shared.h" />
+    <ClInclude Include="Vertex.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>

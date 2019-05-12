@@ -77,8 +77,8 @@ void Window::framebufferResizeCallback(GLFWwindow * window, int width, int heigh
 {
 	auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 	app->framebufferResized = true;
-	app->_surface_size_x = width;
-	app->_surface_size_y = height;
+	//app->_surface_size_x = width;
+	//app->_surface_size_y = height;
 }
 
 #endif // USE_FRAMEWORK_GLFW

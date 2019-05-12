@@ -15,6 +15,7 @@ Window::Window(Renderer* renderer, uint32_t size_x, uint32_t size_y, std::string
 	_InitGraphicsPipeline();
 	_InitFramebuffers();
 	_InitCommandPool();
+	_InitVertexBuffers();
 	_InitCommandBuffers();
 	_InitSyncObjects();
 }
@@ -23,6 +24,7 @@ Window::~Window()
 {
 	_DeInitSyncObjects();
 	_DeInitCommandBuffers();
+	_DeInitVertexBuffers();
 	_DeInitCommandPool();
 	_DeInitFramebuffers();
 	_DeInitGraphicsPipeline();
@@ -432,12 +434,15 @@ void Window::_InitGraphicsPipeline()
 
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
+	auto bindingDescription = Vertex::getBindingDescription();
+	auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.pVertexBindingDescriptions = nullptr; 
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
-	vertexInputInfo.pVertexAttributeDescriptions = nullptr; 
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -560,6 +565,45 @@ void Window::_DeInitCommandPool()
 	vkDestroyCommandPool(_renderer->GetVulkanDevice(), _commandPool, nullptr);
 }
 
+void Window::_InitVertexBuffers()
+{
+	VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = sizeof(vertices[0]) * vertices.size();
+	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	ErrorCheck(vkCreateBuffer(_renderer->GetVulkanDevice(), &bufferInfo, nullptr, &_vertexBuffer));
+
+	VkMemoryRequirements memRequirements;
+	vkGetBufferMemoryRequirements(_renderer->GetVulkanDevice(), _vertexBuffer, &memRequirements);
+
+	VkPhysicalDeviceMemoryProperties memProperties;
+
+	uint32_t memoryIndex = FindMemoryTypeIndex(&_renderer->GetVulkanPhysicalDeviceMemoryProperties(), &memRequirements, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+	VkMemoryAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = memoryIndex;
+
+	ErrorCheck(vkAllocateMemory(_renderer->GetVulkanDevice(), &allocInfo, nullptr, &_vertexBufferMemory));
+
+	vkBindBufferMemory(_renderer->GetVulkanDevice(), _vertexBuffer, _vertexBufferMemory, 0);
+	
+	void* data;
+	vkMapMemory(_renderer->GetVulkanDevice(), _vertexBufferMemory, 0, bufferInfo.size, 0, &data);
+	memcpy(data, vertices.data(), (size_t)bufferInfo.size);
+	vkUnmapMemory(_renderer->GetVulkanDevice(), _vertexBufferMemory);
+
+}
+
+void Window::_DeInitVertexBuffers()
+{
+	vkDestroyBuffer(_renderer->GetVulkanDevice(), _vertexBuffer, nullptr);
+	vkFreeMemory(_renderer->GetVulkanDevice(), _vertexBufferMemory, nullptr);
+}
+
 void Window::_InitCommandBuffers()
 {
 	_commandBuffers.resize(_framebuffers.size());
@@ -591,7 +635,13 @@ void Window::_InitCommandBuffers()
 
 		vkCmdBeginRenderPass(_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
-		vkCmdDraw(_commandBuffers[i], 3, 1, 0, 0);
+
+		VkBuffer vertexBuffers[] = { _vertexBuffer };
+		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindVertexBuffers(_commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+		vkCmdDraw(_commandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+
 		vkCmdEndRenderPass(_commandBuffers[i]);
 
 		ErrorCheck(vkEndCommandBuffer(_commandBuffers[i]));
@@ -637,11 +687,10 @@ void Window::_DeInitSyncObjects()
 
 void Window::_CleanUpOldSwapChain()
 {
-	_DeInitFramebuffers();
 	_DeInitCommandBuffers();
+	//_DeInitVertexBuffers();
+	_DeInitFramebuffers();
 	_DeInitGraphicsPipeline();
-	//vkDestroyPipeline(_renderer->GetVulkanDevice(), _graphicsPipeline, nullptr);
-	//vkDestroyPipelineLayout(_renderer->GetVulkanDevice(), _pipelineLayout, nullptr);
 	_DeInitRenderPass();
 	_DeInitDepthStencilImage();
 	_DeInitSwapchainImages();
@@ -668,6 +717,7 @@ void Window::_ReInitSwapChain()
 	_InitRenderPass();
 	_InitGraphicsPipeline();
 	_InitFramebuffers();
+	//_InitVertexBuffers();
 	_InitCommandBuffers();
 
 }
