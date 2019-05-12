@@ -61,6 +61,10 @@ private:
 	void _CleanUpOldSwapChain();
 	void _ReInitSwapChain();
 
+	void _GetWindowSize();
+
+	void _WaitForEvents();
+
 	static std::vector<char> readFile(const std::string& filename);
 
 	VkShaderModule _CreateShaderModule(const std::vector<char>& code);
@@ -106,8 +110,11 @@ private:
 	std::vector<VkFence> _inFlightFences;
 	size_t currentFrame = 0;
 
+	bool framebufferResized = false;
+
 #if USE_FRAMEWORK_GLFW
 	GLFWwindow						*	_glfw_window = nullptr;
+	static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 #elif VK_USE_PLATFORM_WIN32_KHR
 	HINSTANCE							_win32_instance = NULL;
 	HWND								_win32_window = NULL;

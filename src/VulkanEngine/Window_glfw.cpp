@@ -28,6 +28,8 @@ void Window::_InitOSWindow()
 	assert(rc == GLFW_TRUE);
 	glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
 	_glfw_window = glfwCreateWindow((int) _surface_size_x,(int) _surface_size_y, _window_name.c_str(), nullptr, nullptr );
+	glfwSetWindowUserPointer(_glfw_window, this);
+	glfwSetFramebufferSizeCallback(_glfw_window, framebufferResizeCallback);
 	//glfwGetFramebufferSize( _glfw_window, (int*)&_surface_size_x, (int*)&_surface_size_y );
 }
 
@@ -56,6 +58,27 @@ void Window::_InitOSSurface()
 		assert(0 && "GLFW could not create the window surface.");
 		return;
 	}
+}
+
+void Window::_GetWindowSize()
+{
+	int width, height = 0;
+	glfwGetFramebufferSize(_glfw_window,  &width, &height);
+	_surface_size_x = width;
+	_surface_size_y = height;
+}
+
+void Window::_WaitForEvents()
+{
+	glfwWaitEvents();
+}
+
+void Window::framebufferResizeCallback(GLFWwindow * window, int width, int height)
+{
+	auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+	app->framebufferResized = true;
+	app->_surface_size_x = width;
+	app->_surface_size_y = height;
 }
 
 #endif // USE_FRAMEWORK_GLFW

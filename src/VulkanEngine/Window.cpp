@@ -51,7 +51,16 @@ void Window::DrawFrame()
 	vkResetFences(_renderer->GetVulkanDevice(), 1, &_inFlightFences[currentFrame]);
 
 	uint32_t imageIndex;
-	vkAcquireNextImageKHR(_renderer->GetVulkanDevice(), _swapchain, UINT64_MAX, _imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(_renderer->GetVulkanDevice(), _swapchain, UINT64_MAX, _imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+		_ReInitSwapChain();
+		return;
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+		throw std::runtime_error("failed to acquire swap chain image!");
+	}
+
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -78,7 +87,15 @@ void Window::DrawFrame()
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.pImageIndices = &imageIndex;
 
-	vkQueuePresentKHR(_renderer->GetVulkanQueue(), &presentInfo);
+	result = vkQueuePresentKHR(_renderer->GetVulkanQueue(), &presentInfo);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized) {
+		framebufferResized = false;
+		_ReInitSwapChain();
+	}
+	else if (result != VK_SUCCESS) {
+		throw std::runtime_error("failed to present swap chain image!");
+	}
 
 	//vkQueueWaitIdle(_renderer->GetVulkanQueue());
 
@@ -622,22 +639,29 @@ void Window::_CleanUpOldSwapChain()
 {
 	_DeInitFramebuffers();
 	_DeInitCommandBuffers();
-	vkDestroyPipeline(_renderer->GetVulkanDevice(), _graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(_renderer->GetVulkanDevice(), _pipelineLayout, nullptr);
+	_DeInitGraphicsPipeline();
+	//vkDestroyPipeline(_renderer->GetVulkanDevice(), _graphicsPipeline, nullptr);
+	//vkDestroyPipelineLayout(_renderer->GetVulkanDevice(), _pipelineLayout, nullptr);
 	_DeInitRenderPass();
 	_DeInitDepthStencilImage();
 	_DeInitSwapchainImages();
 	_DeInitSwapchain();
+	_DeInitSurface();
 
-	_DeInitOSWindow();
+	//_DeInitOSWindow();
 }
 
 void Window::_ReInitSwapChain()
 {
 	vkDeviceWaitIdle(_renderer->GetVulkanDevice());
-
+	while (_surface_size_x == 0 || _surface_size_y == 0)
+	{
+		_GetWindowSize();
+		_WaitForEvents();
+	}
 	_CleanUpOldSwapChain();
 
+	_InitSurface();
 	_InitSwapchain();
 	_InitSwapchainImages();
 	_InitDepthStencilImage();
@@ -676,6 +700,7 @@ VkShaderModule Window::_CreateShaderModule(const std::vector<char>& code)
 	}
 	return shaderModule;
 }
+
 
 std::vector<VkImage> Window::GetSwapchainImages()
 {
