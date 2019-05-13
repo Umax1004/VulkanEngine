@@ -73,6 +73,7 @@ void Window::_WaitForEvents()
 	glfwWaitEvents();
 }
 
+
 void Window::framebufferResizeCallback(GLFWwindow * window, int width, int height)
 {
 	auto app = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));

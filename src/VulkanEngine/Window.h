@@ -5,6 +5,7 @@
 #include "Renderer.h"
 #include <array>
 #include "Vertex.h"
+#include <chrono>
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -47,6 +48,9 @@ private:
 	void _InitFramebuffers();
 	void _DeInitFramebuffers();
 
+	void _InitDescriptorSetLayout();
+	void _DeInitDescriptorSetLayout();
+
 	void _InitGraphicsPipeline();
 	void _DeInitGraphicsPipeline();
 
@@ -55,6 +59,19 @@ private:
 
 	void _InitVertexBuffers();
 	void _DeInitVertexBuffers();
+
+	void _InitIndexBuffers();
+	void _DeInitIndexBuffers();
+
+	void _InitUniformBuffers();
+	void _DeInitUniformBuffers();
+	void _UpdateUniformBuffers(uint32_t currentImage);
+
+	void _InitDescriptorPool();
+	void _DeInitDescriptorPool();
+
+	void _InitDescriptorSets();
+	void _DeInitDescriptorSets();
 
 	void _InitCommandBuffers();
 	void _DeInitCommandBuffers();
@@ -65,8 +82,10 @@ private:
 	void _CleanUpOldSwapChain();
 	void _ReInitSwapChain();
 
-	void _GetWindowSize();
+	void _CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	void _CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
+	void _GetWindowSize();
 	void _WaitForEvents();
 
 	static std::vector<char> readFile(const std::string& filename);
@@ -117,13 +136,27 @@ private:
 	bool framebufferResized = false;
 
 	const std::vector<Vertex> vertices = {
-	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+	};
+
+	const std::vector<uint16_t> indices = {
+		0, 1, 2, 2, 3, 0
 	};
 
 	VkBuffer _vertexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory _vertexBufferMemory = VK_NULL_HANDLE;
+	VkBuffer _indexBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory _indexBufferMemory = VK_NULL_HANDLE;
+	VkDescriptorSetLayout _descriptorSetLayout = VK_NULL_HANDLE;
+	VkDescriptorPool _descriptorPool = VK_NULL_HANDLE;
+
+
+	std::vector<VkBuffer> _uniformBuffers;
+	std::vector<VkDeviceMemory> _uniformBuffersMemory;
+	std::vector<VkDescriptorSet> descriptorSets;
 
 #if USE_FRAMEWORK_GLFW
 	GLFWwindow						*	_glfw_window = nullptr;
