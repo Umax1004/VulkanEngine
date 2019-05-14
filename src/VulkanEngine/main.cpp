@@ -1,3 +1,4 @@
+#define STB_IMAGE_IMPLEMENTATION
 #include "Renderer.h"
 #include <conio.h>
 #include "Window.h"

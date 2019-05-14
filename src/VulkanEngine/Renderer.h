@@ -48,6 +48,7 @@ private:
 	VkPhysicalDevice _gpu = VK_NULL_HANDLE;
 	VkQueue _queue = VK_NULL_HANDLE;
 	uint32_t _graphicsFamilyIndex = 0;
+	VkPhysicalDeviceFeatures _gpuFeatures = {};
 	VkPhysicalDeviceProperties _gpuProperties = {};
 	VkPhysicalDeviceMemoryProperties _gpuMemoryProperties = {};
 

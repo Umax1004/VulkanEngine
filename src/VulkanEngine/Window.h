@@ -1,11 +1,13 @@
 #pragma once
 
+
 #include "Platform.h"
 #include <string>
 #include "Renderer.h"
 #include <array>
 #include "Vertex.h"
 #include <chrono>
+#include <stb_image.h>
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -57,6 +59,15 @@ private:
 	void _InitCommandPool();
 	void _DeInitCommandPool();
 
+	void _InitTextureImage();
+	void _DeInitTextureImage();
+
+	void _InitTextureImageView();
+	void _DeInitTextureImageView();
+
+	void _InitTextureSampler();
+	void _DeInitTextureSampler();
+
 	void _InitVertexBuffers();
 	void _DeInitVertexBuffers();
 
@@ -84,6 +95,12 @@ private:
 
 	void _CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void _CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+	void _CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+	VkCommandBuffer _BeginSingleTimeCommands();
+	void _EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+	void _TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+	void _CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+	VkImageView _CreateImageView(VkImage image, VkFormat format);
 
 	void _GetWindowSize();
 	void _WaitForEvents();
@@ -136,10 +153,10 @@ private:
 	bool framebufferResized = false;
 
 	const std::vector<Vertex> vertices = {
-	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 	};
 
 	const std::vector<uint16_t> indices = {
@@ -152,6 +169,11 @@ private:
 	VkDeviceMemory _indexBufferMemory = VK_NULL_HANDLE;
 	VkDescriptorSetLayout _descriptorSetLayout = VK_NULL_HANDLE;
 	VkDescriptorPool _descriptorPool = VK_NULL_HANDLE;
+
+	VkImage _textureImage = VK_NULL_HANDLE;
+	VkDeviceMemory _textureImageMemory = VK_NULL_HANDLE;
+	VkImageView _textureImageView = VK_NULL_HANDLE;
+	VkSampler _textureSampler = VK_NULL_HANDLE;
 
 
 	std::vector<VkBuffer> _uniformBuffers;

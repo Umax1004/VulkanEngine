@@ -113,6 +113,7 @@ void Renderer::_InitDevice()
 		std::vector<VkPhysicalDevice> gpuList(gpuCount);
 		vkEnumeratePhysicalDevices(_instance, &gpuCount, gpuList.data());
 		pickPhysicalDevice(gpuList.data(), gpuCount);
+		vkGetPhysicalDeviceFeatures(_gpu, &_gpuFeatures);
 		vkGetPhysicalDeviceProperties(_gpu, &_gpuProperties);
 		vkGetPhysicalDeviceMemoryProperties(_gpu, &_gpuMemoryProperties);
 	}
@@ -158,6 +159,9 @@ void Renderer::_InitDevice()
 	deviceQueueCreateInfo.queueCount = 1;
 	deviceQueueCreateInfo.pQueuePriorities = queuePriorities;
 
+	VkPhysicalDeviceFeatures deviceFeatures = {};
+	deviceFeatures.samplerAnisotropy = VK_TRUE;
+
 	VkDeviceCreateInfo deviceCreateInfo{};
 	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	deviceCreateInfo.queueCreateInfoCount = 1;
@@ -166,6 +170,7 @@ void Renderer::_InitDevice()
 //	deviceCreateInfo.ppEnabledLayerNames = _deviceLayers.data();
 	deviceCreateInfo.enabledExtensionCount = _deviceExtensions.size();
 	deviceCreateInfo.ppEnabledExtensionNames = _deviceExtensions.data();
+	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
 
 
