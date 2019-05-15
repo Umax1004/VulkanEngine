@@ -8,7 +8,8 @@
 #include "Vertex.h"
 #include <chrono>
 #include <stb_image.h>
-
+#include <tiny_obj_loader.h>
+#include <unordered_map>
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
 
@@ -67,6 +68,8 @@ private:
 
 	void _InitTextureSampler();
 	void _DeInitTextureSampler();
+
+	void _LoadModel();
 
 	void _InitVertexBuffers();
 	void _DeInitVertexBuffers();
@@ -153,22 +156,8 @@ private:
 
 	bool framebufferResized = false;
 
-	const std::vector<Vertex> vertices = {
-	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-	{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-	{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-	{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-	{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-	{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-	{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-	{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-	};
-
-	const std::vector<uint16_t> indices = {
-		0, 1, 2, 2, 3, 0,
-		4, 5, 6, 6, 7, 4
-	};
+	std::vector<Vertex> vertices;
+	std::vector<uint32_t> indices;
 
 	VkBuffer _vertexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory _vertexBufferMemory = VK_NULL_HANDLE;
@@ -186,6 +175,9 @@ private:
 	std::vector<VkBuffer> _uniformBuffers;
 	std::vector<VkDeviceMemory> _uniformBuffersMemory;
 	std::vector<VkDescriptorSet> descriptorSets;
+
+	const std::string MODEL_PATH = "models/chalet.obj";
+	const std::string TEXTURE_PATH = "textures/chalet.jpg";
 
 #if USE_FRAMEWORK_GLFW
 	GLFWwindow						*	_glfw_window = nullptr;
