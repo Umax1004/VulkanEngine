@@ -98,13 +98,14 @@ private:
 
 	void _CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void _CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-	void _CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+	void _CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 	VkCommandBuffer _BeginSingleTimeCommands();
 	void _EndSingleTimeCommands(VkCommandBuffer commandBuffer);
-	void _TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+	void _TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
 	void _CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-	VkImageView _CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+	VkImageView _CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 	bool _HasStencilComponent(VkFormat format);
+	void _GenerateMipMaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
 	void _GetWindowSize();
 	void _WaitForEvents();
@@ -170,6 +171,7 @@ private:
 	VkDeviceMemory _textureImageMemory = VK_NULL_HANDLE;
 	VkImageView _textureImageView = VK_NULL_HANDLE;
 	VkSampler _textureSampler = VK_NULL_HANDLE;
+	uint32_t mipLevels;
 
 
 	std::vector<VkBuffer> _uniformBuffers;
