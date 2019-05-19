@@ -25,6 +25,7 @@ public:
 	const uint32_t							GetVulkanGraphicsQueueFamilyIndex() const;
 	const VkPhysicalDeviceProperties		&	GetVulkanPhysicalDeviceProperties() const;
 	const VkPhysicalDeviceMemoryProperties	&	GetVulkanPhysicalDeviceMemoryProperties() const;
+	const VkSampleCountFlagBits				GetMaxSampleCount() const;
 
 private:
 
@@ -42,6 +43,7 @@ private:
 
 	void pickPhysicalDevice(VkPhysicalDevice* physicalDevices, uint32_t physicalDevicesCount);
 	void getGraphicsFamilyIndex(VkQueueFamilyProperties* queueList, uint32_t queueCount);
+	VkSampleCountFlagBits getMaxUsableSampleCount();
 
 	VkInstance	_instance = VK_NULL_HANDLE;
 	VkDevice	_device = VK_NULL_HANDLE;
@@ -51,6 +53,7 @@ private:
 	VkPhysicalDeviceFeatures _gpuFeatures = {};
 	VkPhysicalDeviceProperties _gpuProperties = {};
 	VkPhysicalDeviceMemoryProperties _gpuMemoryProperties = {};
+	VkSampleCountFlagBits _msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
 	std::vector<const char*> _instanceLayers;
 	std::vector<const char*> _instanceExtensions;

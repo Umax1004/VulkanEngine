@@ -42,6 +42,9 @@ private:
 	void _InitSwapchainImages();
 	void _DeInitSwapchainImages();
 
+	void _InitColorResources();
+	void _DeInitColorResources();
+
 	void _InitDepthStencilImage();
 	void _DeInitDepthStencilImage();
 
@@ -98,7 +101,7 @@ private:
 
 	void _CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void _CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-	void _CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+	void _CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 	VkCommandBuffer _BeginSingleTimeCommands();
 	void _EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 	void _TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
@@ -173,6 +176,9 @@ private:
 	VkSampler _textureSampler = VK_NULL_HANDLE;
 	uint32_t mipLevels;
 
+	VkImage _colorImage;
+	VkDeviceMemory _colorImageMemory;
+	VkImageView _colorImageView;
 
 	std::vector<VkBuffer> _uniformBuffers;
 	std::vector<VkDeviceMemory> _uniformBuffersMemory;

@@ -14,6 +14,7 @@ Window::Window(Renderer* renderer, uint32_t size_x, uint32_t size_y, std::string
 	_InitDescriptorSetLayout();
 	_InitGraphicsPipeline();
 	_InitCommandPool();
+	_InitColorResources();
 	_InitDepthStencilImage();
 	_InitFramebuffers();
 	_InitTextureImage();
@@ -42,6 +43,7 @@ Window::~Window()
 	_DeInitTextureImage();
 	_DeInitFramebuffers();
 	_DeInitDepthStencilImage();
+	_DeInitColorResources();
 	_DeInitCommandPool();
 	_DeInitGraphicsPipeline();
 	_DeInitDescriptorSetLayout();
@@ -248,6 +250,23 @@ void Window::_DeInitSwapchainImages()
 	}
 }
 
+void Window::_InitColorResources()
+{
+	VkFormat colorFormat = _surfaceFormat.format;
+
+	_CreateImage(_surface_size_x, _surface_size_y, 1, _renderer->GetMaxSampleCount(), colorFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _colorImage, _colorImageMemory);
+	_colorImageView = _CreateImageView(_colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+
+	_TransitionImageLayout(_colorImage, colorFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
+}
+
+void Window::_DeInitColorResources()
+{
+	vkDestroyImageView(_renderer->GetVulkanDevice(), _colorImageView, nullptr);
+	vkDestroyImage(_renderer->GetVulkanDevice(), _colorImage, nullptr);
+	vkFreeMemory(_renderer->GetVulkanDevice(), _colorImageMemory, nullptr);
+}
+
 void Window::_InitDepthStencilImage()
 {
 	{
@@ -296,7 +315,7 @@ void Window::_InitDepthStencilImage()
 	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	vkCreateImage(_renderer->GetVulkanDevice(), &imageCreateInfo, nullptr, &_depthStencilImage);*/
 
-	_CreateImage(_surface_size_x, _surface_size_y, 1,_depthStencilFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _depthStencilImage, _depthStencilImageMemory);
+	_CreateImage(_surface_size_x, _surface_size_y, 1, _renderer->GetMaxSampleCount(), _depthStencilFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _depthStencilImage, _depthStencilImageMemory);
 
 	/*VkMemoryRequirements imageMemoryRequirements{};
 	vkGetImageMemoryRequirements(_renderer->GetVulkanDevice(), _depthStencilImage, &imageMemoryRequirements);
@@ -343,14 +362,14 @@ void Window::_DeInitDepthStencilImage()
 void Window::_InitRenderPass()
 {
 
-	std::array<VkAttachmentDescription, 2> attachments{};
+	std::array<VkAttachmentDescription, 3> attachments{};
 	attachments[0].flags = 0;
 	attachments[0].format = _surfaceFormat.format;
-	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[0].samples = _renderer->GetMaxSampleCount();
 	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	{
 		std::vector<VkFormat> try_formats{
@@ -382,7 +401,7 @@ void Window::_InitRenderPass()
 
 	attachments[1].flags = 0;
 	attachments[1].format = _depthStencilFormat;
-	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[1].samples = _renderer->GetMaxSampleCount();
 	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -398,11 +417,28 @@ void Window::_InitRenderPass()
 	subPass0ColorAttachments[0].attachment = 0;
 	subPass0ColorAttachments[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+	VkAttachmentDescription colorAttachmentResolve = {};
+	colorAttachmentResolve.format = _surfaceFormat.format;
+	colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
+	colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	attachments[2] = colorAttachmentResolve;
+
+	VkAttachmentReference colorAttachmentResolveRef = {};
+	colorAttachmentResolveRef.attachment = 2;
+	colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
 	std::array<VkSubpassDescription, 1> subPasses{};
 	subPasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subPasses[0].colorAttachmentCount = subPass0ColorAttachments.size();
 	subPasses[0].pColorAttachments = subPass0ColorAttachments.data();	
 	subPasses[0].pDepthStencilAttachment = &subPass0DepthStencilAttachment;
+	subPasses[0].pResolveAttachments = &colorAttachmentResolveRef;
 
 	VkSubpassDependency dependency = {};
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -434,9 +470,10 @@ void Window::_InitFramebuffers()
 	_framebuffers.resize(_swapchainImageCount);
 	for (uint32_t i = 0; i < _swapchainImageCount; i++)
 	{
-		std::array<VkImageView, 2> attachments{};
-		attachments[0] = _swapchainImageViews[i];
+		std::array<VkImageView, 3> attachments{};
+		attachments[0] = _colorImageView;
 		attachments[1] = _depthStencilImageView;
+		attachments[2] = _swapchainImageViews[i];
 
 		VkFramebufferCreateInfo framebufferCreateInfo{};
 		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -562,8 +599,9 @@ void Window::_InitGraphicsPipeline()
 
 	VkPipelineMultisampleStateCreateInfo multisampling = {};
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisampling.sampleShadingEnable = VK_FALSE;
-	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	multisampling.sampleShadingEnable = VK_TRUE; // enable sample shading in the pipeline
+	multisampling.minSampleShading = .2f; // min fraction for sample shading; closer to one is smoother
+	multisampling.rasterizationSamples = _renderer->GetMaxSampleCount();
 
 	VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
 	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -675,7 +713,7 @@ void Window::_InitTextureImage()
 	vkUnmapMemory(_renderer->GetVulkanDevice(), stagingBufferMemory);
 	stbi_image_free(pixels);
 
-	_CreateImage(texWidth, texHeight, mipLevels, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _textureImage, _textureImageMemory);
+	_CreateImage(texWidth, texHeight, mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, _textureImage, _textureImageMemory);
 	_TransitionImageLayout(_textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
 	_CopyBufferToImage(stagingBuffer, _textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 	//_TransitionImageLayout(_textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
@@ -1038,6 +1076,7 @@ void Window::_CleanUpOldSwapChain()
 	//_DeInitVertexBuffers();
 	_DeInitFramebuffers();
 	_DeInitDepthStencilImage();
+	_DeInitColorResources();
 	_DeInitGraphicsPipeline();
 	_DeInitRenderPass();
 	_DeInitSwapchainImages();
@@ -1062,6 +1101,7 @@ void Window::_ReInitSwapChain()
 	_InitSwapchainImages();
 	_InitRenderPass();
 	_InitGraphicsPipeline();
+	_InitColorResources();
 	_InitDepthStencilImage();
 	_InitFramebuffers();
 	//_InitVertexBuffers();
@@ -1139,7 +1179,7 @@ void Window::_CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize si
 	_EndSingleTimeCommands(commandBuffer);
 }
 
-void Window::_CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage & image, VkDeviceMemory & imageMemory)
+void Window::_CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage & image, VkDeviceMemory & imageMemory)
 {
 	VkImageCreateInfo imageInfo = {};
 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -1154,7 +1194,7 @@ void Window::_CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, V
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	imageInfo.usage = usage;
 	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageInfo.samples = numSamples;
 	imageInfo.flags = 0; // Optional
 	ErrorCheck(vkCreateImage(_renderer->GetVulkanDevice(), &imageInfo, nullptr, &image));
 
@@ -1256,6 +1296,13 @@ void Window::_TransitionImageLayout(VkImage image, VkFormat format, VkImageLayou
 
 		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 		destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	}
 	else {
 		throw std::invalid_argument("unsupported layout transition!");

@@ -69,6 +69,11 @@ const VkPhysicalDeviceMemoryProperties & Renderer::GetVulkanPhysicalDeviceMemory
 	return _gpuMemoryProperties;
 }
 
+const VkSampleCountFlagBits Renderer::GetMaxSampleCount() const
+{
+	return _msaaSamples;
+}
+
 void Renderer::_SetupLayersAndExtensions()
 {
 	//_instanceExtensions.push_back(VK_KHR_DISPLAY_EXTENSION_NAME);
@@ -161,6 +166,7 @@ void Renderer::_InitDevice()
 
 	VkPhysicalDeviceFeatures deviceFeatures = {};
 	deviceFeatures.samplerAnisotropy = VK_TRUE;
+	deviceFeatures.sampleRateShading = VK_TRUE;
 
 	VkDeviceCreateInfo deviceCreateInfo{};
 	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -178,6 +184,7 @@ void Renderer::_InitDevice()
 
 	vkGetDeviceQueue(_device, _graphicsFamilyIndex, 0, &_queue);
 
+	_msaaSamples = getMaxUsableSampleCount();
 }
 
 void Renderer::_DeInitDevice()
@@ -326,4 +333,18 @@ void Renderer::getGraphicsFamilyIndex(VkQueueFamilyProperties * queueList, uint3
 		assert(0 && "Vulkan ERROR: Queue Family support for Graphics not found");
 		std::exit(-1);
 	}
+}
+
+VkSampleCountFlagBits Renderer::getMaxUsableSampleCount()
+{
+
+	VkSampleCountFlags counts = std::min(_gpuProperties.limits.framebufferColorSampleCounts, _gpuProperties.limits.framebufferDepthSampleCounts);
+	if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
+	if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
+	if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
+	if (counts & VK_SAMPLE_COUNT_8_BIT) { return VK_SAMPLE_COUNT_8_BIT; }
+	if (counts & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
+	if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
+
+	return VK_SAMPLE_COUNT_1_BIT;
 }
